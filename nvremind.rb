@@ -82,76 +82,77 @@ class Reminder
 
   protected
 
-    def parsed_options?
+  def parsed_options?
 
-      opts = OptionParser.new
-      opts.on('-v', '--version')    { output_version ; exit 0 }
-      opts.on('-h', '--help')       { output_help }
-      opts.on('-V', '--verbose')    { @options.verbose = true }
-      opts.on('-r', '--remove')     { @options.remove = true }
-      opts.on('-n', '--notify') { @options.notify = true }
-      opts.parse!(@arguments) rescue return false
+    opts = OptionParser.new
+    opts.on('-v', '--version')    { output_version ; exit 0 }
+    opts.on('-h', '--help')       { output_help }
+    opts.on('-V', '--verbose')    { @options.verbose = true }
+    opts.on('-r', '--remove')     { @options.remove = true }
+    opts.on('-n', '--notify')     { @options.notify = true }
+    opts.parse!(@arguments) rescue return false
 
-      true
+    true
+  end
+
+  def output_options
+    puts "Options:\n"
+
+    @options.marshal_dump.each do |name, val|
+      puts "  #{name} = #{val}"
     end
+  end
 
-    def output_options
-      puts "Options:\n"
+  def arguments_valid?
+    true if @arguments[0] && File.exists?(File.expand_path(@arguments[0]))
+  end
 
-      @options.marshal_dump.each do |name, val|
-        puts "  #{name} = #{val}"
-      end
+  def process_arguments
+    @notes_dir = File.expand_path(@arguments[0])
+    if @options.notify
+      require 'rubygems'
+      require 'terminal-notifier'
     end
+  end
 
-    def arguments_valid?
-      true if @arguments[0] && File.exists?(File.expand_path(@arguments[0]))
-    end
+  def output_help
+    output_version
+    RDoc::usage() #exits app
+  end
 
-    def process_arguments
-      @notes_dir = File.expand_path(@arguments[0])
-      if @options.notify
-        require 'rubygems'
-        require 'terminal-notifier'
-      end
-    end
+  def output_version
+    puts "#{File.basename(__FILE__)} version #{VERSION}"
+  end
 
-    def output_help
-      output_version
-      RDoc::usage() #exits app
-    end
-
-    def output_version
-      puts "#{File.basename(__FILE__)} version #{VERSION}"
-    end
-
-    def process_command
-      Dir.chdir(@notes_dir)
-      file_list = %x{grep -El "@remind\(.*?\)" *.{md,txt}}.split("\n")
-      file_list.each {|file|
-        contents = IO.read(file)
-        date_match = contents.match(/@remind\((.*?)\)/)
-        unless date_match.nil?
-          remind_date = Time.parse(date_match[1])
-          if remind_date < Time.now
-            message = "REMINDER: #{file} [#{remind_date.strftime('%F')}]"
-            if @options.notify
-              TerminalNotifier.notify(message, :title => "Reminder", :open => "nvalt://find/#{CGI.escape(File.basename(file).gsub(/\.(txt|md)$/,'')).gsub(/\+/,"%20")}")
-            else
-              puts message
-            end
-            if @options.remove
-              File.open(file,'w+') do |f|
-                f.puts contents.gsub(/@remind\(/,"@reminded(")
-              end
+  def process_command
+    Dir.chdir(@notes_dir)
+    file_list = %x{grep -El "@remind\(.*?\)" *.{md,txt}}.split("\n")
+    file_list.each {|file|
+      contents = IO.read(file)
+      date_match = contents.match(/@remind\((.*?)\)/)
+      unless date_match.nil?
+        remind_date = Time.parse(date_match[1])
+        if remind_date < Time.now
+          message = "REMINDER: #{file} [#{remind_date.strftime('%F')}]"
+          if @options.notify
+            TerminalNotifier.notify(message, :title => "Reminder", :open => "nvalt://find/#{CGI.escape(File.basename(file).gsub(/\.(txt|md)$/,'')).gsub(/\+/,"%20")}")
+          else
+            puts message
+          end
+          if @options.remove
+            File.open(file,'w+') do |f|
+              f.puts contents.gsub(/@remind\(/,"@reminded(")
             end
           end
         end
-      }
+      end
+    }
 
-    end
+  end
 
 end
 
 r = Reminder.new(ARGV)
 r.run
+
 
