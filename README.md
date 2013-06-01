@@ -49,7 +49,7 @@ For help use: `nvremind.rb -h`
     -V, --verbose       Verbose output
     -r, --replace       Replace @remind() with @reminded() after notification
     -n, --notify        Use terminal-notifier to post Mountain Lion notifications
-
+    -e EMAIL[,EMAIL], --email EMAIL[,EMAIL] Send an email with note contents to the specified address
 
 ## Author
 
