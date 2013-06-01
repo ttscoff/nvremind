@@ -22,40 +22,39 @@ Use the -n option to send Mountain Lion notifications instead of terminal output
 ## Examples
 
 
-        nvremind.rb ~/Dropbox/nvALT
+    nvremind.rb ~/Dropbox/nvALT
 
 Other examples:
 
-        nvremind.rb -r ~/Dropbox/nvALT
-        nvremind.rb -rn ~/Dropbox/nvALT
+    nvremind.rb -r ~/Dropbox/nvALT
+    nvremind.rb -rn ~/Dropbox/nvALT
 
 
 ## Usage
 
 
-      nvremind.rb [options] notes_folder
+    nvremind.rb [options] notes_folder
 
-      For help use: nvremind.rb -h
+For help use: `nvremind.rb -h`
 
 
 ## Options
 
 
-      -h, --help          Displays help message
-      -v, --version       Display the version, then exit
-      -V, --verbose       Verbose output
-      -r, --replace       Replace @remind() with @reminded() after notification
-      -n, --notify        Use terminal-notifier to post Mountain Lion notifications
+    -h, --help          Displays help message
+    -v, --version       Display the version, then exit
+    -V, --verbose       Verbose output
+    -r, --replace       Replace @remind() with @reminded() after notification
+    -n, --notify        Use terminal-notifier to post Mountain Lion notifications
 
 
 ## Author
 
 
-      Brett Terpstra
+Brett Terpstra
 
 
 ## Copyright
 
-
-      Copyright (c) 2013 Brett Terpstra. Licensed under the MIT License:
-      http://www.opensource.org/licenses/mit-license.php
+Copyright (c) 2013 Brett Terpstra. Licensed under the MIT License:  
+<http://www.opensource.org/licenses/mit-license.php>
