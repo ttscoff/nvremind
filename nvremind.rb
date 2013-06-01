@@ -2,7 +2,7 @@
 # == Synopsis
 #   This tool will search for @remind() tags in the specified notes folder.
 #
-#   It searches ".md" and ".txt" files.
+#   It searches ".md", ".txt" and ".taskpaper" files.
 #
 #   It expects an ISO 8601 format date (2013-05-01) with optional 24-hour time (2013-05-01 15:30).
 #   Put `@remind(2013-05-01 06:00)` anywhere in a note to have a reminder go off on the first run after that time.
@@ -12,8 +12,11 @@
 #   Use the -n option to send Mountain Lion notifications instead of terminal output. Clicking a notification will open the related file in nvALT.
 #   Notifications require that the 'terminal-notifier' gem be installed:
 #
-#   sudo gem install 'terminal-notifier'
+#       sudo gem install 'terminal-notifier'
 #
+#   Use the -e ADDRESS option to send an email with the title of the note as the subject and the contents of the note as the body to the specified address. Separate multiple emails with commas. The contents of the note will be rendered with MultiMarkdown, which needs to exist at /usr/local/bin/multimarkdown.
+#
+#   If the file has a ".taskpaper" extension, it will be converted to Markdown for formatting before processing with MultiMarkdown.
 # == Examples
 #
 #     nvremind.rb ~/Dropbox/nvALT
@@ -21,6 +24,7 @@
 #   Other examples:
 #     nvremind.rb -r ~/Dropbox/nvALT
 #     nvremind.rb -rn ~/Dropbox/nvALT
+#     nvremind.rb -re me@gmail.com ~/Dropbox/nvALT
 #
 # == Usage
 #   nvremind.rb [options] notes_folder
@@ -33,6 +37,7 @@
 #   -V, --verbose       Verbose output
 #   -r, --replace       Replace @remind() with @reminded() after notification
 #   -n, --notify        Use terminal-notifier to post Mountain Lion notifications
+#   -e EMAIL[,EMAIL], --email EMAIL[,EMAIL] Send an email with note contents to the specified address
 #
 # == Author
 #   Brett Terpstra
@@ -47,6 +52,54 @@ require 'cgi'
 require 'time'
 require 'optparse'
 require 'ostruct'
+require 'shellwords'
+
+class TaskPaper
+  def tp2md(input)
+    header = input.scan(/Format\: .*$/)
+    output = ""
+    prevlevel = 0
+    begin
+        input.split("\n").each {|line|
+          if line =~ /^(\t+)?(.*?):(\s(.*?))?$/
+            tabs = $1
+            project = $2
+            if tabs.nil?
+              output += "\n## #{project} ##\n\n"
+              prevlevel = 0
+            else
+              output += "#{tabs.gsub(/^\t/,"")}* **#{project.gsub(/^\s*-\s*/,'')}**\n"
+              prevlevel = tabs.length
+            end
+          elsif line =~ /^(\t+)?\- (.*)$/
+            task = $2
+            tabs = $1.nil? ? '' : $1
+            task = "*<del>#{task}</del>*" if task =~ /@done/
+            if tabs.length - prevlevel > 1
+              tabs = "\t"
+              prevlevel.times {|i| tabs += "\t"}
+            end
+            tabs = '' if prevlevel == 0 && tabs.length > 1
+            output += "#{tabs.gsub(/^\t/,'')}* #{task.strip}\n"
+            prevlevel = tabs.length
+          else
+            next if line =~ /^\s*$/
+            tabs = ""
+            (prevlevel - 1).times {|i| tabs += "\t"}
+            output += "\n#{tabs}*#{line.strip}*\n"
+          end
+        }
+    rescue => err
+        puts "Exception: #{err}"
+        err
+    end
+    o = ""
+    o += header.join("\n") + "\n" unless header.nil?
+    o += "<style>.tag strong {font-weight:normal;color:#555} .tag a {text-decoration:none;border:none;color:#777}</style>"
+    o += output.gsub(/\[\[(.*?)\]\]/,"<a href=\"nvalt://find/\\1\">\\1</a>").gsub(/(@[^ \n\r\(]+)((\()([^\)]+)(\)))?/,"<em class=\"tag\"><a href=\"nvalt://find/\\0\">\\1\\3<strong>\\4</strong>\\5</a></em>")
+    o
+  end
+end
 
 class Reminder
   VERSION = '0.0.1'
@@ -60,6 +113,8 @@ class Reminder
     @options.remove = false
     @options.verbose = false
     @options.notify = false
+    @options.email = false
+    @options.stdout = true
   end
 
   def run
@@ -90,6 +145,12 @@ class Reminder
     opts.on('-V', '--verbose')    { @options.verbose = true }
     opts.on('-r', '--remove')     { @options.remove = true }
     opts.on('-n', '--notify')     { @options.notify = true }
+    opts.on('-e EMAIL[,EMAIL]', '--email EMAIL[,EMAIL]') { |emails|
+      @options.email = []
+      emails.split(/,/).each {|email|
+        @options.email.push(email.strip)
+      }
+    }
     opts.parse!(@arguments) rescue return false
 
     true
@@ -113,6 +174,9 @@ class Reminder
       require 'rubygems'
       require 'terminal-notifier'
     end
+    if (@options.notify || @options.email) && !@options.verbose
+      @options.stdout = false
+    end
   end
 
   def output_help
@@ -126,7 +190,7 @@ class Reminder
 
   def process_command
     Dir.chdir(@notes_dir)
-    file_list = %x{grep -El "@remind\(.*?\)" *.{md,txt}}.split("\n")
+    file_list = %x{grep -El "@remind\(.*?\)" *.{md,txt,taskpaper}}.split("\n")
     file_list.each {|file|
       contents = IO.read(file)
       date_match = contents.match(/@remind\((.*?)\)/)
@@ -134,10 +198,31 @@ class Reminder
         remind_date = Time.parse(date_match[1])
         if remind_date < Time.now
           message = "REMINDER: #{file} [#{remind_date.strftime('%F')}]"
-          if @options.notify
-            TerminalNotifier.notify(message, :title => "Reminder", :open => "nvalt://find/#{CGI.escape(File.basename(file).gsub(/\.(txt|md)$/,'')).gsub(/\+/,"%20")}")
-          else
+          if @options.stdout
             puts message
+          end
+          if @options.notify
+            TerminalNotifier.notify(message, :title => "Reminder", :open => "nvalt://find/#{CGI.escape(File.basename(file).gsub(/\.(txt|md|taskpaper)$/,'')).gsub(/\+/,"%20")}")
+          end
+          if @options.email
+            subject = File.basename(file).gsub(/\.(txt|md|taskpaper)$/,'')
+            if File.extname(file) == ".taskpaper"
+              md = "format: complete\n\n#{TaskPaper.new.tp2md(IO.read(file))}"
+              content = %x{echo #{Shellwords.escape(md)}|/usr/local/bin/multimarkdown}
+            else
+              content = %x{echo "format: complete\n\n" | cat - "#{file}"|/usr/local/bin/multimarkdown}
+            end
+            template =<<ENDTEMPLATE
+Subject: #{subject}
+MIME-Version: 1.0
+Content-Type: text/html;
+
+#{content}
+
+ENDTEMPLATE
+            @options.email.each {|email|
+              %x{echo #{Shellwords.escape(template)}|/usr/sbin/sendmail #{email}}
+            }
           end
           if @options.remove
             File.open(file,'w+') do |f|
