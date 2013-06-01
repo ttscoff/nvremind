@@ -32,7 +32,7 @@
 #   -v, --version       Display the version, then exit
 #   -V, --verbose       Verbose output
 #   -r, --replace       Replace @remind() with @reminded() after notification
-#   -n, --notify Use terminal-notifier to post Mountain Lion notifications
+#   -n, --notify        Use terminal-notifier to post Mountain Lion notifications
 #
 # == Author
 #   Brett Terpstra
