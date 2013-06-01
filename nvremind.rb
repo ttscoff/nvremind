@@ -24,7 +24,7 @@
 #   Other examples:
 #     nvremind.rb -r ~/Dropbox/nvALT
 #     nvremind.rb -rn ~/Dropbox/nvALT
-#     nvremind.rb -re me@gmail.com ~/Dropbox/nvALT
+#     nvremind.rb -r -e me@gmail.com ~/Dropbox/nvALT
 #
 # == Usage
 #   nvremind.rb [options] notes_folder
