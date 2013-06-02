@@ -35,7 +35,7 @@
 #   -h, --help          Displays help message
 #   -v, --version       Display the version, then exit
 #   -V, --verbose       Verbose output
-#   -r, --replace       Replace @remind() with @reminded() after notification
+#   -z, --no-replace    Don't updated @remind() tags with @reminded() after notification
 #   -n, --notify        Use terminal-notifier to post Mountain Lion notifications
 #   -e EMAIL[,EMAIL], --email EMAIL[,EMAIL] Send an email with note contents to the specified address
 #
@@ -110,7 +110,7 @@ class Reminder
     @arguments = arguments
 
     @options = OpenStruct.new
-    @options.remove = false
+    @options.remove = true
     @options.verbose = false
     @options.notify = false
     @options.email = false
@@ -143,7 +143,7 @@ class Reminder
     opts.on('-v', '--version')    { output_version ; exit 0 }
     opts.on('-h', '--help')       { output_help }
     opts.on('-V', '--verbose')    { @options.verbose = true }
-    opts.on('-r', '--remove')     { @options.remove = true }
+    opts.on('-z', '--no-replace') { @options.remove = false }
     opts.on('-n', '--notify')     { @options.notify = true }
     opts.on('-e EMAIL[,EMAIL]', '--email EMAIL[,EMAIL]') { |emails|
       @options.email = []
@@ -225,8 +225,18 @@ ENDTEMPLATE
             }
           end
           if @options.remove
+            contents.gsub!(/@remind\((.*?)\)/) {|match|
+              date = match.match(/\((.*?)\)/)[1]
+              remind_date = Time.parse(date)
+              if remind_date < Time.now
+                "@reminded(#{Time.now.strftime('%Y-%m-%d %H:%M')})"
+              else
+                match
+              end
+            }
+
             File.open(file,'w+') do |f|
-              f.puts contents.gsub(/@remind\(/,"@reminded(")
+              f.puts contents
             end
           end
         end

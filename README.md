@@ -14,6 +14,10 @@ It expects an ISO 8601 format date (2013-05-01) with optional 24-hour time (2013
 
 This script is intended to be run on a schedule. Check for reminders every 30-60 minutes using cron or launchd.
 
+By default the script will replace found @remind tags with @reminded tags containing the date the reminder was sent. Use the `-z` option to prevent any changes from being made to your file, although this can result in reminders being sent multiple times. You'd need to manually update the files after handling the reminder.
+
+A document can contain multiple reminders with different dates. The script will check all of them and only modify the ones that are triggered. Future reminders in the same document will still be active after the run.
+
 Use the `-n` option to send Mountain Lion notifications instead of terminal output. Clicking a notification will open the related file in nvALT. Notifications require that the 'terminal-notifier' gem be installed:
 
     sudo gem install 'terminal-notifier'
