@@ -18,6 +18,8 @@ By default the script will replace found @remind tags with @reminded tags contai
 
 A document can contain multiple reminders with different dates. The script will check all of them and only modify the ones that are triggered. Future reminders in the same document will still be active after the run.
 
+Reminders on their own line with no other text will send the entire note as the reminder with the filename being the subject line. If a @reminder tag is on a line with other text, only that line will be used as the title and the content.
+
 Use the `-n` option to send Mountain Lion notifications instead of terminal output. Clicking a notification will open the related file in nvALT. Notifications require that the 'terminal-notifier' gem be installed:
 
     sudo gem install 'terminal-notifier'
@@ -35,9 +37,14 @@ The `-m` option will add a reminder to Reminders.app in Mountain Lion, due immed
 
 Other examples:
 
-    nvremind.rb -r ~/Dropbox/nvALT
-    nvremind.rb -rn ~/Dropbox/nvALT
-    nvremind.rb -r -e me@gmail.com ~/Dropbox/nvALT
+    nvremind.rb ~/Dropbox/nvALT
+    nvremind.rb -n ~/Dropbox/nvALT
+    nvremind.rb -e me@gmail.com ~/Dropbox/nvALT
+    nvremind.rb -mn -e me@gmail.com ~/Dropbox/nvALT
+
+Testing/debugging example:
+
+    nvremind.rb -Vz ~/Dropbox/nvALT
 
 ## Usage
 

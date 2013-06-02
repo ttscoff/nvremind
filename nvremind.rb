@@ -7,6 +7,8 @@
 #   It expects an ISO 8601 format date (2013-05-01) with optional 24-hour time (2013-05-01 15:30).
 #   Put `@remind(2013-05-01 06:00)` anywhere in a note to have a reminder go off on the first run after that time.
 #
+#   Reminders on their own line with no other text will send the entire note as the reminder with the filename being the subject line. If a @reminder tag is on a line with other text, only that line will be used as the title and the content.
+#
 #   This script is intended to be run on a schedule. Check for reminders every 30-60 minutes using cron or launchd.
 #
 #   Use the -n option to send Mountain Lion notifications instead of terminal output. Clicking a notification will open the related file in nvALT.
@@ -17,15 +19,17 @@
 #   Use the -e ADDRESS option to send an email with the title of the note as the subject and the contents of the note as the body to the specified address. Separate multiple emails with commas. The contents of the note will be rendered with MultiMarkdown, which needs to exist at /usr/local/bin/multimarkdown.
 #
 #   If the file has a ".taskpaper" extension, it will be converted to Markdown for formatting before processing with MultiMarkdown.
+
+#   The `-m` option will add a reminder to Reminders.app in Mountain Lion, due immediately, that will show up on iCloud-synced iOS devices as well.
 # == Examples
 #
 #     nvremind.rb ~/Dropbox/nvALT
 #
 #   Other examples:
-#     nvremind.rb -r ~/Dropbox/nvALT
-#     nvremind.rb -rn ~/Dropbox/nvALT
-#     nvremind.rb -r -e me@gmail.com ~/Dropbox/nvALT
-#
+#     nvremind.rb ~/Dropbox/nvALT
+#     nvremind.rb -n ~/Dropbox/nvALT
+#     nvremind.rb -e me@gmail.com ~/Dropbox/nvALT
+#     nvremind.rb -mn -e me@gmail.com ~/Dropbox/nvALT
 # == Usage
 #   nvremind.rb [options] notes_folder
 #
@@ -103,7 +107,7 @@ class TaskPaper
 end
 
 class Reminder
-  VERSION = '0.0.1'
+  VERSION = '0.2.0'
 
   attr_reader :options
 
@@ -200,37 +204,84 @@ class Reminder
     Dir.chdir(@notes_dir)
     file_list = %x{grep -El "@remind\(.*?\)" *.{md,txt,taskpaper}}.split("\n")
     file_list.each {|file|
-      contents = IO.read(file)
-      date_match = contents.match(/@remind\((.*?)\)/)
-      unless date_match.nil?
-        remind_date = Time.parse(date_match[1])
-        if remind_date < Time.now
-          message = "REMINDER: #{file} [#{remind_date.strftime('%F')}]"
-          if @options.stdout
-            puts message
-          end
-          if @options.notify
-            TerminalNotifier.notify(message, :title => "Reminder", :open => "nvalt://find/#{CGI.escape(File.basename(file).gsub(/\.(txt|md|taskpaper)$/,'')).gsub(/\+/,"%20")}")
-          end
-          if @options.reminders
-            %x{osascript <<'APPLESCRIPT'
-            tell application "Reminders"
-              set _reminders to list "Reminders"
-              set d to current date
-              make new reminder at end of _reminders with properties {name:"#{File.basename(file).gsub(/\.(txt|md|taskpaper)$/,'')}", remind me date:d, body:"#{e_as(IO.read(file))}"}
-            end tell
-          APPLESCRIPT}
-          end
-          if @options.email
-            subject = File.basename(file).gsub(/\.(txt|md|taskpaper)$/,'')
-            if File.extname(file) == ".taskpaper"
-              md = "format: complete\n\n#{TaskPaper.new.tp2md(IO.read(file))}"
-              content = %x{echo #{Shellwords.escape(md)}|/usr/local/bin/multimarkdown}
+      input = IO.read(file)
+      lines = input.split(/\n/)
+      counter = 0
+      lines.map! {|contents|
+        counter += 1
+        date_match = contents.match(/@remind\((.*?)\)/)
+        unless date_match.nil?
+          remind_date = Time.parse(date_match[1])
+          if remind_date < Time.now
+            stripped_line = contents.gsub(/\s*@remind\(#{date_match[1]}\)\s*/,'').strip
+            filename = "#{@notes_dir}/#{file}".gsub(/\+/,"%20")
+            note_title = File.basename(file).gsub(/\.(txt|md|taskpaper)$/,'')
+            if stripped_line == ""
+              @title = note_title
+              @extension = File.extname(file)
+              @message = "REMINDER: #{@title} [#{remind_date.strftime('%F')}]"
+              @note = IO.read(file) + "\n\n- <nvalt://find/#{CGI.escape(note_title).gsub(/\+/,"%20")}>\n"
             else
-              content = %x{echo "format: complete\n\n" | cat - "#{file}"|/usr/local/bin/multimarkdown}
+              @title = stripped_line
+              @extension = ""
+              @message = "REMINDER: #{@title} [#{remind_date.strftime('%F')}]"
+              @note = "#{@message}\n\n- <file://#{filename}:#{counter}>\n- <nvalt://find/#{CGI.escape(note_title).gsub(/\+/,"%20")}>\n"
             end
-            template =<<ENDTEMPLATE
-Subject: #{subject}
+            if @options.verbose
+              puts "Title: #{@title}"
+              puts "Extension: #{@extension}"
+              puts "Message: #{@message}"
+              puts "Note: #{@note}"
+            end
+            notify
+
+            if @options.remove
+              contents.gsub!(/@remind\((.*?)\)/) {|match|
+                date = match.match(/\((.*?)\)/)[1]
+                remind_date = Time.parse(date)
+                if remind_date < Time.now
+                  "@reminded(#{Time.now.strftime('%Y-%m-%d %H:%M')})"
+                else
+                  match
+                end
+              }
+            end
+          end
+        end
+        contents
+      }
+      File.open(file,'w+') do |f|
+        f.puts lines.join("\n")
+      end
+    }
+  end
+
+  def notify
+    if @options.stdout
+      puts @message
+    end
+    if @options.notify
+      TerminalNotifier.notify(@message, :title => "Reminder", :open => "nvalt://find/#{CGI.escape(@title).gsub(/\+/,"%20")}")
+    end
+    if @options.reminders
+      %x{osascript <<'APPLESCRIPT'
+      tell application "Reminders"
+        set _reminders to list "Reminders"
+        set d to current date
+        make new reminder at end of _reminders with properties {name:"#{@title}", remind me date:d, body:"#{e_as(@note)}"}
+      end tell
+    APPLESCRIPT}
+    end
+    if @options.email
+      subject = @title
+      if @extension == ".taskpaper"
+        md = "format: complete\n\n#{TaskPaper.new.tp2md(@note)}"
+        content = %x{echo #{Shellwords.escape(md)}|/usr/local/bin/multimarkdown}
+      else
+        content = %x{echo #{Shellwords.escape("format: complete\n\n" + @note)}|/usr/local/bin/multimarkdown}
+      end
+      template =<<ENDTEMPLATE
+Subject: #{@title}
 From: nvreminder@system.net
 MIME-Version: 1.0
 Content-Type: text/html;
@@ -238,31 +289,11 @@ Content-Type: text/html;
 #{content}
 
 ENDTEMPLATE
-            @options.email.each {|email|
-              %x{echo #{Shellwords.escape(template)}|/usr/sbin/sendmail #{email}}
-            }
-          end
-          if @options.remove
-            contents.gsub!(/@remind\((.*?)\)/) {|match|
-              date = match.match(/\((.*?)\)/)[1]
-              remind_date = Time.parse(date)
-              if remind_date < Time.now
-                "@reminded(#{Time.now.strftime('%Y-%m-%d %H:%M')})"
-              else
-                match
-              end
-            }
-
-            File.open(file,'w+') do |f|
-              f.puts contents
-            end
-          end
-        end
-      end
-    }
-
+      @options.email.each {|email|
+        %x{echo #{Shellwords.escape(template)}|/usr/sbin/sendmail #{email}}
+      }
+    end
   end
-
 end
 
 r = Reminder.new(ARGV)
