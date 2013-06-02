@@ -26,6 +26,8 @@ Use the `-e ADDRESS` option to send an email with the title of the note as the s
 
 If the file to be emailed has a ".taskpaper" extension, it will be converted to Markdown for formatting before processing with MultiMarkdown. [[Links]] and @tags will be linked and can be clicked from Mail.app.
 
+The `-m` option will add a reminder to Reminders.app in Mountain Lion, due immediately, that will show up on iCloud-synced iOS devices as well.
+
 ## Examples
 
 
@@ -51,8 +53,9 @@ For help use: `nvremind.rb -h`
     -h, --help          Displays help message
     -v, --version       Display the version, then exit
     -V, --verbose       Verbose output
-    -r, --replace       Replace @remind() with @reminded() after notification
+    -z, --no-replace    Don't replace @remind() with @reminded() after notification
     -n, --notify        Use terminal-notifier to post Mountain Lion notifications
+    -m, --reminders     Add an item to the Reminders list in Reminders.app (due immediately)
     -e EMAIL[,EMAIL], --email EMAIL[,EMAIL] Send an email with note contents to the specified address
 
 ## Author

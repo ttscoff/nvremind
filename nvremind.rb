@@ -37,6 +37,7 @@
 #   -V, --verbose       Verbose output
 #   -z, --no-replace    Don't updated @remind() tags with @reminded() after notification
 #   -n, --notify        Use terminal-notifier to post Mountain Lion notifications
+#   -m, --reminders     Add an item to the Reminders list in Reminders.app (due immediately)
 #   -e EMAIL[,EMAIL], --email EMAIL[,EMAIL] Send an email with note contents to the specified address
 #
 # == Author
@@ -115,6 +116,7 @@ class Reminder
     @options.notify = false
     @options.email = false
     @options.stdout = true
+    @options.reminders = false
   end
 
   def run
@@ -135,6 +137,10 @@ class Reminder
 
   end
 
+  def e_as(str)
+    str.to_s.gsub(/(?=["\\])/, '\\')
+  end
+
   protected
 
   def parsed_options?
@@ -146,6 +152,7 @@ class Reminder
     opts.on('-z', '--no-replace') { @options.remove = false }
     opts.on('-n', '--notify')     { @options.notify = true }
     opts.on('-r', '--replace')    {  } # depricated, backward compatibility only
+    opts.on('-m', '--reminders')  { @options.reminders = true }
     opts.on('-e EMAIL[,EMAIL]', '--email EMAIL[,EMAIL]') { |emails|
       @options.email = []
       emails.split(/,/).each {|email|
@@ -175,7 +182,7 @@ class Reminder
       require 'rubygems'
       require 'terminal-notifier'
     end
-    if (@options.notify || @options.email) && !@options.verbose
+    if (@options.notify || @options.email || @options.reminders) && !@options.verbose
       @options.stdout = false
     end
   end
@@ -204,6 +211,15 @@ class Reminder
           end
           if @options.notify
             TerminalNotifier.notify(message, :title => "Reminder", :open => "nvalt://find/#{CGI.escape(File.basename(file).gsub(/\.(txt|md|taskpaper)$/,'')).gsub(/\+/,"%20")}")
+          end
+          if @options.reminders
+            %x{osascript <<'APPLESCRIPT'
+            tell application "Reminders"
+              set _reminders to list "Reminders"
+              set d to current date
+              make new reminder at end of _reminders with properties {name:"#{File.basename(file).gsub(/\.(txt|md|taskpaper)$/,'')}", remind me date:d, body:"#{e_as(IO.read(file))}"}
+            end tell
+          APPLESCRIPT}
           end
           if @options.email
             subject = File.basename(file).gsub(/\.(txt|md|taskpaper)$/,'')
