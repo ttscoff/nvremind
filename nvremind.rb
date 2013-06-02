@@ -145,6 +145,7 @@ class Reminder
     opts.on('-V', '--verbose')    { @options.verbose = true }
     opts.on('-z', '--no-replace') { @options.remove = false }
     opts.on('-n', '--notify')     { @options.notify = true }
+    opts.on('-r', '--replace')    {  } # depricated, backward compatibility only
     opts.on('-e EMAIL[,EMAIL]', '--email EMAIL[,EMAIL]') { |emails|
       @options.email = []
       emails.split(/,/).each {|email|
@@ -214,6 +215,7 @@ class Reminder
             end
             template =<<ENDTEMPLATE
 Subject: #{subject}
+From: nvreminder@system.net
 MIME-Version: 1.0
 Content-Type: text/html;
 
