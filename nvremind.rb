@@ -2,7 +2,7 @@
 # == Synopsis
 #   This tool will search for @remind() tags in the specified notes folder.
 #
-#   It searches ".md", ".txt" and ".taskpaper" files.
+#   It searches ".md", ".txt", ".taskpaper", and ".ft" files.
 #
 #   It expects an ISO 8601 format date (2013-05-01) with optional 24-hour time (2013-05-01 15:30).
 #   Put `@remind(2013-05-01 06:00)` anywhere in a note to have a reminder go off on the first run after that time.
@@ -202,7 +202,7 @@ class Reminder
 
   def process_command
     Dir.chdir(@notes_dir)
-    file_list = %x{grep -El "@remind\(.*?\)" *.{md,txt,taskpaper}}.split("\n")
+    file_list = %x{grep -El "@remind\(.*?\)" *.{md,txt,taskpaper,ft}}.split("\n")
     file_list.each {|file|
       input = IO.read(file)
       lines = input.split(/\n/)
@@ -215,7 +215,7 @@ class Reminder
           if remind_date < Time.now
             stripped_line = contents.gsub(/\s*@remind\(#{date_match[1]}\)\s*/,'').strip
             filename = "#{@notes_dir}/#{file}".gsub(/\+/,"%20")
-            note_title = File.basename(file).gsub(/\.(txt|md|taskpaper)$/,'')
+            note_title = File.basename(file).gsub(/\.(txt|md|taskpaper|ft)$/,'')
             if stripped_line == ""
               @title = note_title
               @extension = File.extname(file)
@@ -298,5 +298,4 @@ end
 
 r = Reminder.new(ARGV)
 r.run
-
 
