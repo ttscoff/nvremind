@@ -19,7 +19,7 @@
 #   Use the -e ADDRESS option to send an email with the title of the note as the subject and the contents of the note as the body to the specified address. Separate multiple emails with commas. The contents of the note will be rendered with MultiMarkdown, which needs to exist at /usr/local/bin/multimarkdown.
 #
 #   If the file has a ".taskpaper" extension, it will be converted to Markdown for formatting before processing with MultiMarkdown.
-
+#
 #   The `-m` option will add a reminder to Reminders.app in Mountain Lion, due immediately, that will show up on iCloud-synced iOS devices as well.
 # == Examples
 #
@@ -136,7 +136,7 @@ class Reminder
       puts "\nFinished at #{DateTime.now}" if @options.verbose
 
     else
-      output_help
+      output_usage
     end
 
   end
@@ -191,9 +191,14 @@ class Reminder
     end
   end
 
+  def output_usage
+    output_version
+    RDoc::usage("Usage") #exits app
+  end
+
   def output_help
     output_version
-    RDoc::usage() #exits app
+    RDoc::usage("Options")
   end
 
   def output_version
