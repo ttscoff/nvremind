@@ -202,7 +202,7 @@ class Reminder
 
   def process_command
     Dir.chdir(@notes_dir)
-    file_list = %x{grep -El "@remind\(.*?\)" *.{md,txt,taskpaper}}.split("\n")
+    file_list = %x{grep -El "@remind\(.*?\)" *.{md,txt,taskpaper,ft} 2>/dev/null}.split("\n")
     file_list.each {|file|
       input = IO.read(file)
       lines = input.split(/\n/)
@@ -215,7 +215,7 @@ class Reminder
           if remind_date < Time.now
             stripped_line = contents.gsub(/\s*@remind\(#{date_match[1]}\)\s*/,'').strip
             filename = "#{@notes_dir}/#{file}".gsub(/\+/,"%20")
-            note_title = File.basename(file).gsub(/\.(txt|md|taskpaper)$/,'')
+            note_title = File.basename(file).gsub(/\.(txt|md|taskpaper,ft)$/,'')
             if stripped_line == ""
               @title = note_title
               @extension = File.extname(file)
