@@ -59,6 +59,8 @@ require 'optparse'
 require 'ostruct'
 require 'shellwords'
 
+NVR_VERSION = '0.2.1'
+
 class TaskPaper
   def tp2md(input)
     header = input.scan(/Format\: .*$/)
@@ -107,8 +109,6 @@ class TaskPaper
 end
 
 class Reminder
-  VERSION = '0.2.0'
-
   attr_reader :options
 
   def initialize(arguments)
@@ -202,7 +202,7 @@ class Reminder
   end
 
   def output_version
-    puts "#{File.basename(__FILE__)} version #{VERSION}"
+    puts "#{File.basename(__FILE__)} version #{NVR_VERSION}"
   end
 
   def process_command
