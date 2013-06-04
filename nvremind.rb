@@ -2,7 +2,7 @@
 # == Synopsis
 #   This tool will search for @remind() tags in the specified notes folder.
 #
-#   It searches ".md", ".txt" and ".taskpaper" files.
+#   It searches ".md", ".txt", ".ft" and ".taskpaper" files.
 #
 #   It expects an ISO 8601 format date (2013-05-01) with optional 24-hour time (2013-05-01 15:30).
 #   Put `@remind(2013-05-01 06:00)` anywhere in a note to have a reminder go off on the first run after that time.
@@ -230,7 +230,8 @@ class Reminder
               @title = stripped_line
               @extension = ""
               @message = "REMINDER: #{@title} [#{remind_date.strftime('%F')}]"
-              @note = "#{@message}\n\n- <file://#{filename}:#{counter}>\n- <nvalt://find/#{CGI.escape(note_title).gsub(/\+/,"%20")}>\n"
+              # add :#{counter} after #{filename} to include line number below
+              @note = "#{@message}\n\n- <file://#{filename}>\n- <nvalt://find/#{CGI.escape(note_title).gsub(/\+/,"%20")}>\n"
             end
             if @options.verbose
               puts "Title: #{@title}"
