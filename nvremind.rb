@@ -7,7 +7,10 @@
 #   It expects an ISO 8601 format date (2013-05-01) with optional 24-hour time (2013-05-01 15:30).
 #   Put `@remind(2013-05-01 06:00)` anywhere in a note to have a reminder go off on the first run after that time.
 #
+#
 #   Reminders on their own line with no other text will send the entire note as the reminder with the filename being the subject line. If a @reminder tag is on a line with other text, only that line will be used as the title and the content.
+#
+#   If you include a double-quoted string at the end of the remind tag value, it will override the default reminder title. `@remind(2013-05-24 "This is the override")` would create a reminder called "This is the override", ignoring any other text on the line or the name of the file. Additional text on the line or the entire note (in the case of a @remind tag on its own line) will still be included in the note, if the notification method supports that.
 #
 #   This script is intended to be run on a schedule. Check for reminders every 30-60 minutes using cron or launchd.
 #
@@ -36,12 +39,14 @@
 #   For help use: nvremind.rb -h
 #
 # == Options
-#   -h, --help          Displays help message
-#   -v, --version       Display the version, then exit
-#   -V, --verbose       Verbose output
-#   -z, --no-replace    Don't updated @remind() tags with @reminded() after notification
-#   -n, --notify        Use terminal-notifier to post Mountain Lion notifications
-#   -m, --reminders     Add an item to the Reminders list in Reminders.app (due immediately)
+#   -h, --help            Displays help message
+#   -H                    No, really help
+#   -v, --version         Display the version, then exit
+#   -V, --verbose         Verbose output
+#   -z, --no-replace      Don't updated @remind() tags with @reminded() after notification
+#   -n, --notify          Use terminal-notifier to post Mountain Lion notifications
+#   -m, --reminders       Add an item to the Reminders list in Reminders.app (due immediately)
+#   --reminder-list LIST  List to use in Reminders.app (default "Reminders")
 #   -e EMAIL[,EMAIL], --email EMAIL[,EMAIL] Send an email with note contents to the specified address
 #
 # == Author
@@ -59,7 +64,7 @@ require 'optparse'
 require 'ostruct'
 require 'shellwords'
 
-NVR_VERSION = '0.2.1'
+NVR_VERSION = '0.2.2'
 
 class TaskPaper
   def tp2md(input)
@@ -121,6 +126,7 @@ class Reminder
     @options.email = false
     @options.stdout = true
     @options.reminders = false
+    @options.reminder_list = "Reminders"
   end
 
   def run
@@ -150,13 +156,15 @@ class Reminder
   def parsed_options?
 
     opts = OptionParser.new
-    opts.on('-v', '--version')    { output_version ; exit 0 }
-    opts.on('-h', '--help')       { output_help }
-    opts.on('-V', '--verbose')    { @options.verbose = true }
-    opts.on('-z', '--no-replace') { @options.remove = false }
-    opts.on('-n', '--notify')     { @options.notify = true }
-    opts.on('-r', '--replace')    {  } # depricated, backward compatibility only
-    opts.on('-m', '--reminders')  { @options.reminders = true }
+    opts.on('-v', '--version')      { output_version ; exit 0 }
+    opts.on('-h', '--help')         { output_help }
+    opts.on('-H')                   { output_long_help }
+    opts.on('-V', '--verbose')      { @options.verbose = true }
+    opts.on('-z', '--no-replace')   { @options.remove = false }
+    opts.on('-n', '--notify')       { @options.notify = true }
+    opts.on('-r', '--replace')      {  } # depricated, backward compatibility only
+    opts.on('-m', '--reminders')    { @options.reminders = true }
+    opts.on('--reminder-list LIST') { |list| @options.reminder_list = list }
     opts.on('-e EMAIL[,EMAIL]', '--email EMAIL[,EMAIL]') { |emails|
       @options.email = []
       emails.split(/,/).each {|email|
@@ -201,6 +209,11 @@ class Reminder
     RDoc::usage("Options")
   end
 
+  def output_long_help
+    output_version
+    RDoc::usage
+  end
+
   def output_version
     puts "#{File.basename(__FILE__)} version #{NVR_VERSION}"
   end
@@ -214,24 +227,28 @@ class Reminder
       counter = 0
       lines.map! {|contents|
         counter += 1
-        date_match = contents.match(/@remind\((.*?)\)/)
+        # don't remind if the line contains @done or @canceled
+        return contents if contents =~ /\s@(done|cancell?ed)/
+        date_match = contents.match(/@remind\((.*?)(\s"(.*?)")?\)/)
         unless date_match.nil?
           remind_date = Time.parse(date_match[1])
-          if remind_date < Time.now
-            stripped_line = contents.gsub(/\s*@remind\(#{date_match[1]}\)\s*/,'').strip
+          if remind_date <= Time.now
+            stripped_line = contents.gsub(/\s*#{Regexp.escape(date_match[0])}\s*/,'').strip
+            # remove leading - or * in case it's in a TaskPaper or Markdown list
+            stripped_line.sub!(/^[\-\*\+] /,"")
             filename = "#{@notes_dir}/#{file}".gsub(/\+/,"%20")
-            note_title = File.basename(file).gsub(/\.(txt|md|taskpaper,ft)$/,'')
+            note_title = File.basename(file).gsub(/\.(txt|md|taskpaper|ft)$/,'')
             if stripped_line == ""
-              @title = note_title
+              @title = date_match[3] || note_title
               @extension = File.extname(file)
-              @message = "REMINDER: #{@title} [#{remind_date.strftime('%F')}]"
+              @message = "#{note_title} [#{remind_date.strftime('%F')}]"
               @note = IO.read(file) + "\n\n- <nvalt://find/#{CGI.escape(note_title).gsub(/\+/,"%20")}>\n"
             else
-              @title = stripped_line
+              @title = date_match[3] || stripped_line
               @extension = ""
-              @message = "REMINDER: #{@title} [#{remind_date.strftime('%F')}]"
+              @message = "#{date_match[3] || stripped_line} [#{remind_date.strftime('%F')}]"
               # add :#{counter} after #{filename} to include line number below
-              @note = "#{@message}\n\n- <file://#{filename}>\n- <nvalt://find/#{CGI.escape(note_title).gsub(/\+/,"%20")}>\n"
+              @note = "#{stripped_line}\n\n- <file://#{filename}>\n- <nvalt://find/#{CGI.escape(note_title).gsub(/\+/,"%20")}>\n"
             end
             if @options.verbose
               puts "Title: #{@title}"
@@ -246,7 +263,7 @@ class Reminder
                 date = match.match(/\((.*?)\)/)[1]
                 remind_date = Time.parse(date)
                 if remind_date < Time.now
-                  "@reminded(#{Time.now.strftime('%Y-%m-%d %H:%M')})"
+                  "@reminded(#{Time.now.strftime('%Y-%m-%d %H:%M')}#{date_match[2]})"
                 else
                   match
                 end
@@ -272,8 +289,12 @@ class Reminder
     if @options.reminders
       %x{osascript <<'APPLESCRIPT'
       tell application "Reminders"
-        set _reminders to list "Reminders"
-        set d to current date
+        if name of lists does not contain "#{@options.reminder_list}" then
+          set _reminders to item 1 of lists
+        else
+          set _reminders to list "#{@options.reminder_list}"
+        end if
+        set d to ((current date) + 10)
         make new reminder at end of _reminders with properties {name:"#{@title}", remind me date:d, body:"#{e_as(@note)}"}
       end tell
     APPLESCRIPT}
