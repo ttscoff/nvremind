@@ -32,7 +32,7 @@ Use the `-e ADDRESS` option to send an email with the title of the note as the s
 
 If the file to be emailed has a ".taskpaper" extension, it will be converted to Markdown for formatting before processing with MultiMarkdown. [[Links]] and @tags will be linked and can be clicked from Mail.app.
 
-The `-m` option will add a reminder to Reminders.app in Mountain Lion, due immediately, that will show up on iCloud-synced iOS devices as well. Specify a specific list (default "Reminders" or the first list available) using `--reminder-list "List name"`.
+The `-m` option will add a reminder to Reminders.app in Mountain Lion, due immediately, that will show up on iCloud-synced iOS devices as well. Specify a list (default "Reminders" or the first list available) using `--reminder-list "List name"`.
 
 ## Examples
 
