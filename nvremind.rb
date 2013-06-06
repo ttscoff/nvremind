@@ -220,50 +220,50 @@ class Reminder
 
   def process_command
     Dir.chdir(@notes_dir)
-    file_list = %x{grep -El "@remind\(.*?\)" *.{md,txt,taskpaper,ft} 2>/dev/null}.split("\n")
 
-    file_list.each {|file|
+    %x{grep -El "@remind\(.*?\)" *.{md,txt,taskpaper,ft} 2>/dev/null}.split("\n").each {|file|
       input = IO.read(file)
       lines = input.split(/\n/)
       counter = 0
       lines.map! {|contents|
         counter += 1
         # don't remind if the line contains @done or @canceled
-        return contents if contents =~ /\s@(done|cancell?ed)/
-        date_match = contents.match(/@remind\((.*?)(\s"(.*?)")?\)/)
-        unless date_match.nil?
-          remind_date = Time.parse(date_match[1])
-          if remind_date <= Time.now
-            stripped_line = contents.gsub(/#{Regexp.escape(date_match[0])}\s*/,'').strip
-            # remove leading - or * in case it's in a TaskPaper or Markdown list
-            stripped_line.sub!(/^[\-\*\+] /,"")
-            filename = "#{@notes_dir}/#{file}".gsub(/\+/,"%20")
-            note_title = File.basename(file).gsub(/\.(txt|md|taskpaper|ft)$/,'')
-            if stripped_line == ""
-              @title = date_match[3] || note_title
-              @extension = File.extname(file)
-              @message = "#{@title} [#{remind_date.strftime('%F')}]"
-              @note = IO.read(file) + "\n\n- <nvalt://find/#{CGI.escape(note_title).gsub(/\+/,"%20")}>\n"
-            else
-              @title = date_match[3] || stripped_line
-              @extension = ""
-              @message = "#{@title} [#{remind_date.strftime('%F')}]"
-              # add :#{counter} after #{filename} to include line number below
-              @note = "#{stripped_line}\n\n- <file://#{filename}>\n- <nvalt://find/#{CGI.escape(note_title).gsub(/\+/,"%20")}>\n"
-            end
-            if @options.verbose
-              puts "Title: #{@title}"
-              puts "Extension: #{@extension}"
-              puts "Message: #{@message}"
-              puts "Note: #{@note}"
-            end
-            notify
-            if @options.remove
-              contents.gsub!(/@remind\((.*?)(\s"(.*?)")?\)/) do |match|
-                if Time.parse($1) < Time.now
-                  "@reminded(#{Time.now.strftime('%Y-%m-%d %H:%M')}#{$2})"
-                else
-                  match
+        unless contents =~ /\s@(done|cancell?ed)/
+          date_match = contents.match(/@remind\((.*?)(\s"(.*?)")?\)/)
+          unless date_match.nil?
+            remind_date = Time.parse(date_match[1])
+            if remind_date <= Time.now
+              stripped_line = contents.gsub(/#{Regexp.escape(date_match[0])}\s*/,'').strip
+              # remove leading - or * in case it's in a TaskPaper or Markdown list
+              stripped_line.sub!(/^[\-\*\+] /,"")
+              filename = "#{@notes_dir}/#{file}".gsub(/\+/,"%20")
+              note_title = File.basename(file).gsub(/\.(txt|md|taskpaper|ft)$/,'')
+              if stripped_line == ""
+                @title = date_match[3] || note_title
+                @extension = File.extname(file)
+                @message = "#{@title} [#{remind_date.strftime('%F')}]"
+                @note = IO.read(file) + "\n\n- <nvalt://find/#{CGI.escape(note_title).gsub(/\+/,"%20")}>\n"
+              else
+                @title = date_match[3] || stripped_line
+                @extension = ""
+                @message = "#{@title} [#{remind_date.strftime('%F')}]"
+                # add :#{counter} after #{filename} to include line number below
+                @note = "#{stripped_line}\n\n- <file://#{filename}>\n- <nvalt://find/#{CGI.escape(note_title).gsub(/\+/,"%20")}>\n"
+              end
+              if @options.verbose
+                puts "Title: #{@title}"
+                puts "Extension: #{@extension}"
+                puts "Message: #{@message}"
+                puts "Note: #{@note}"
+              end
+              notify
+              if @options.remove
+                contents.gsub!(/@remind\((.*?)(\s"(.*?)")?\)/) do |match|
+                  if Time.parse($1) < Time.now
+                    "@reminded(#{Time.now.strftime('%Y-%m-%d %H:%M')}#{$2})"
+                  else
+                    match
+                  end
                 end
               end
             end
