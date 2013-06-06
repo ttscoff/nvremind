@@ -72,38 +72,38 @@ class TaskPaper
     output = ""
     prevlevel = 0
     begin
-        input.split("\n").each {|line|
-          if line =~ /^(\t+)?(.*?):(\s(.*?))?$/
-            tabs = $1
-            project = $2
-            if tabs.nil?
-              output += "\n## #{project} ##\n\n"
-              prevlevel = 0
-            else
-              output += "#{tabs.gsub(/^\t/,"")}* **#{project.gsub(/^\s*-\s*/,'')}**\n"
-              prevlevel = tabs.length
-            end
-          elsif line =~ /^(\t+)?\- (.*)$/
-            task = $2
-            tabs = $1.nil? ? '' : $1
-            task = "*<del>#{task}</del>*" if task =~ /@done/
-            if tabs.length - prevlevel > 1
-              tabs = "\t"
-              prevlevel.times {|i| tabs += "\t"}
-            end
-            tabs = '' if prevlevel == 0 && tabs.length > 1
-            output += "#{tabs.gsub(/^\t/,'')}* #{task.strip}\n"
-            prevlevel = tabs.length
+      input.split("\n").each {|line|
+        if line =~ /^(\t+)?(.*?):(\s(.*?))?$/
+          tabs = $1
+          project = $2
+          if tabs.nil?
+            output += "\n## #{project} ##\n\n"
+            prevlevel = 0
           else
-            next if line =~ /^\s*$/
-            tabs = ""
-            (prevlevel - 1).times {|i| tabs += "\t"}
-            output += "\n#{tabs}*#{line.strip}*\n"
+            output += "#{tabs.gsub(/^\t/,"")}* **#{project.gsub(/^\s*-\s*/,'')}**\n"
+            prevlevel = tabs.length
           end
-        }
+        elsif line =~ /^(\t+)?\- (.*)$/
+          task = $2
+          tabs = $1.nil? ? '' : $1
+          task = "*<del>#{task}</del>*" if task =~ /@done/
+          if tabs.length - prevlevel > 1
+            tabs = "\t"
+            prevlevel.times {|i| tabs += "\t"}
+          end
+          tabs = '' if prevlevel == 0 && tabs.length > 1
+          output += "#{tabs.gsub(/^\t/,'')}* #{task.strip}\n"
+          prevlevel = tabs.length
+        else
+          next if line =~ /^\s*$/
+          tabs = ""
+          (prevlevel - 1).times {|i| tabs += "\t"}
+          output += "\n#{tabs}*#{line.strip}*\n"
+        end
+      }
     rescue => err
-        puts "Exception: #{err}"
-        err
+      puts "Exception: #{err}"
+      err
     end
     o = ""
     o += header.join("\n") + "\n" unless header.nil?
@@ -221,6 +221,7 @@ class Reminder
   def process_command
     Dir.chdir(@notes_dir)
     file_list = %x{grep -El "@remind\(.*?\)" *.{md,txt,taskpaper,ft} 2>/dev/null}.split("\n")
+
     file_list.each {|file|
       input = IO.read(file)
       lines = input.split(/\n/)
@@ -233,7 +234,7 @@ class Reminder
         unless date_match.nil?
           remind_date = Time.parse(date_match[1])
           if remind_date <= Time.now
-            stripped_line = contents.gsub(/\s*#{Regexp.escape(date_match[0])}\s*/,'').strip
+            stripped_line = contents.gsub(/#{Regexp.escape(date_match[0])}\s*/,'').strip
             # remove leading - or * in case it's in a TaskPaper or Markdown list
             stripped_line.sub!(/^[\-\*\+] /,"")
             filename = "#{@notes_dir}/#{file}".gsub(/\+/,"%20")
@@ -241,12 +242,12 @@ class Reminder
             if stripped_line == ""
               @title = date_match[3] || note_title
               @extension = File.extname(file)
-              @message = "#{note_title} [#{remind_date.strftime('%F')}]"
+              @message = "#{@title} [#{remind_date.strftime('%F')}]"
               @note = IO.read(file) + "\n\n- <nvalt://find/#{CGI.escape(note_title).gsub(/\+/,"%20")}>\n"
             else
               @title = date_match[3] || stripped_line
               @extension = ""
-              @message = "#{date_match[3] || stripped_line} [#{remind_date.strftime('%F')}]"
+              @message = "#{@title} [#{remind_date.strftime('%F')}]"
               # add :#{counter} after #{filename} to include line number below
               @note = "#{stripped_line}\n\n- <file://#{filename}>\n- <nvalt://find/#{CGI.escape(note_title).gsub(/\+/,"%20")}>\n"
             end
@@ -257,17 +258,14 @@ class Reminder
               puts "Note: #{@note}"
             end
             notify
-
             if @options.remove
-              contents.gsub!(/@remind\((.*?)\)/) {|match|
-                date = match.match(/\((.*?)\)/)[1]
-                remind_date = Time.parse(date)
-                if remind_date < Time.now
-                  "@reminded(#{Time.now.strftime('%Y-%m-%d %H:%M')}#{date_match[2]})"
+              contents.gsub!(/@remind\((.*?)(\s"(.*?)")?\)/) do |match|
+                if Time.parse($1) < Time.now
+                  "@reminded(#{Time.now.strftime('%Y-%m-%d %H:%M')}#{$2})"
                 else
                   match
                 end
-              }
+              end
             end
           end
         end
@@ -281,20 +279,20 @@ class Reminder
 
   def notify
     if @options.stdout
-      puts @message
+    puts @message
     end
     if @options.notify
       TerminalNotifier.notify(@message, :title => "Reminder", :open => "nvalt://find/#{CGI.escape(@title).gsub(/\+/,"%20")}")
     end
     if @options.reminders
       %x{osascript <<'APPLESCRIPT'
-      tell application "Reminders"
+        tell application "Reminders"
         if name of lists does not contain "#{@options.reminder_list}" then
           set _reminders to item 1 of lists
         else
           set _reminders to list "#{@options.reminder_list}"
         end if
-        set d to ((current date) + 10)
+        set d to ((current date) + 120)
         make new reminder at end of _reminders with properties {name:"#{@title}", remind me date:d, body:"#{e_as(@note)}"}
       end tell
     APPLESCRIPT}
@@ -307,7 +305,7 @@ class Reminder
       else
         content = %x{echo #{Shellwords.escape("format: complete\n\n" + @note)}|/usr/local/bin/multimarkdown}
       end
-      template =<<ENDTEMPLATE
+        template =<<ENDTEMPLATE
 Subject: #{@title}
 From: nvreminder@system.net
 MIME-Version: 1.0
@@ -325,5 +323,6 @@ end
 
 r = Reminder.new(ARGV)
 r.run
+
 
 
