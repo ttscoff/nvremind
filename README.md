@@ -73,7 +73,7 @@ For help use `nvremind.rb -h`. For even more help, use `nvremind.rb -H`.
 
 ## Changelog
 
-### 0.2.3
+### 1.0
 
 * Works with any prefix, not just "@". To allow use in apps like Day One that have different uses for @tags. Any character will work (!remind, $remind), there just has to be something immediately before "remind"
 * Works with Day One, just pass it the path to the entries folder within your Journal
