@@ -76,6 +76,7 @@ For help use `nvremind.rb -h`. For even more help, use `nvremind.rb -H`.
 ### 1.0
 
 * Works with any prefix, not just "@". To allow use in apps like Day One that have different uses for @tags. Any character will work (!remind, $remind), there just has to be something immediately before "remind"
+* Works with multiple paths, just separate with commas (no space)
 * Works with Day One, just pass it the path to the entries folder within your Journal
     * In Day One, if a reminder is on its own line and has no override title, the first 30 characters of the first line of the entry will be used as the reminder title.
         
@@ -89,6 +90,7 @@ For help use `nvremind.rb -h`. For even more help, use `nvremind.rb -H`.
 * Remove leading -, * or + so you can use it within Markdown lists and still get nicely-formatted reminder messages
 * Don't include line number in file link (that just breaks it for 90% of the population)
 * Use a remind date 1 minute in the future to allow iOS notifications when using Reminders.app
+* Allows multiple target folders in the last argument, separated by commas (no spaces)
 
 ### 0.2.2
 
