@@ -316,7 +316,7 @@ class Reminder
     if @options.notify == "terminal-notifier"
       TerminalNotifier.notify(@message, :title => "Reminder", :open => "nvalt://find/#{CGI.escape(@title).gsub(/\+/,"%20")}")
     elsif @options.notify == "growlnotify"
-      %x{growlnotify -m "#{@message}" -t "Reminder"}
+      %x{growlnotify -m "#{@message}" -t "Reminder" -s}
     end
     if @options.reminders
       %x{osascript <<'APPLESCRIPT'
