@@ -195,8 +195,15 @@ class Reminder
   def process_arguments
 
     if @options.notify
-      require 'rubygems'
-      require 'terminal-notifier'
+      begin
+        require 'rubygems'
+        gem 'terminal-notifier', '>=1.4'
+        require 'terminal-notifier'
+        @options.notify = "terminal-notifier"
+      rescue Gem::LoadError
+        @options.notify = %x{growlnotify &>/dev/null && echo $? || echo false}.strip == "0" ? "growlnotify" : false
+        $stderr.puts "Either terminal-notifier gem or growlnotify must be installed to use Notifications" unless @options.notify
+      end
     end
     if (@options.notify || @options.email || @options.reminders) && !@options.verbose
       @options.stdout = false
@@ -306,8 +313,10 @@ class Reminder
     if @options.stdout
     puts @message
     end
-    if @options.notify
+    if @options.notify == "terminal-notifier"
       TerminalNotifier.notify(@message, :title => "Reminder", :open => "nvalt://find/#{CGI.escape(@title).gsub(/\+/,"%20")}")
+    elsif @options.notify == "growlnotify"
+      %x{growlnotify -m "#{@message}" -t "Reminder"}
     end
     if @options.reminders
       %x{osascript <<'APPLESCRIPT'
