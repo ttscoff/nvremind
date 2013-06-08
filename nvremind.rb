@@ -64,7 +64,7 @@ require 'optparse'
 require 'ostruct'
 require 'shellwords'
 
-NVR_VERSION = '1.0.2'
+NVR_VERSION = '1.0.3'
 
 class TaskPaper
   def tp2md(input)
