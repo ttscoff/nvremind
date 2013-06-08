@@ -242,9 +242,10 @@ class Reminder
           counter += 1
           # don't remind if the line contains @done or @canceled
           unless contents =~ /\s@(done|cancell?ed)/
-            date_match = contents.match(/([^\s"`'\(\[])remind\((.*?)(\s"(.*?)")?\)/)
+            date_match = contents.match(/([^\s"`'\(\[])remind\((.*)(\s"(.*?)")?\)/)
             unless date_match.nil?
-              remind_date = Time.parse(date_match[1])
+              remind_date = Time.parse(date_match[2])
+
               if remind_date <= Time.now
                 stripped_line = contents.gsub(/["`'\(\[]?#{Regexp.escape(date_match[0])}["`'\)\]]?\s*/,'').gsub(/<\/?string>/,'').strip
                 # remove leading - or * in case it's in a TaskPaper or Markdown list
