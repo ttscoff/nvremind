@@ -64,7 +64,7 @@ require 'optparse'
 require 'ostruct'
 require 'shellwords'
 
-NVR_VERSION = '1.0.1'
+NVR_VERSION = '1.0.2'
 
 class TaskPaper
   def tp2md(input)
@@ -271,7 +271,7 @@ class Reminder
                   if is_day_one
                     @note = stripped_line
                   else
-                    @note = "#{stripped_line}\n\n- <file://#{filename}>\n- <nvalt://find/#{CGI.escape(note_title).gsub(/\+/,"%20")}>\n"
+                    @note = "#{stripped_line}\n\n- file://#{filename}\n- nvalt://find/#{CGI.escape(note_title).gsub(/\+/,"%20")}\n"
                   end
                 end
                 if @options.verbose
@@ -324,13 +324,18 @@ class Reminder
     end
     if @options.email
       subject = @title
+      content = @note
       if @extension == ".taskpaper"
-        md = "format: complete\n\n#{TaskPaper.new.tp2md(@note)}"
-        content = %x{echo #{Shellwords.escape(md)}|/usr/local/bin/multimarkdown}
+        if File.exists?("/usr/local/bin/multimarkdown")
+          md = "format: complete\n\n#{TaskPaper.new.tp2md(@note)}"
+          content = %x{echo #{Shellwords.escape(md)}|/usr/local/bin/multimarkdown}
+        end
       else
-        content = %x{echo #{Shellwords.escape("format: complete\n\n" + @note)}|/usr/local/bin/multimarkdown}
+        if File.exists?("/usr/local/bin/multimarkdown")
+          content = %x{echo #{Shellwords.escape("format: complete\n\n" + @note)}|/usr/local/bin/multimarkdown}
+        end
       end
-        template =<<ENDTEMPLATE
+      template =<<ENDTEMPLATE
 Subject: #{@title}
 From: nvreminder@system.net
 MIME-Version: 1.0
