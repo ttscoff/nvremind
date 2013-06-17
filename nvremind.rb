@@ -38,6 +38,8 @@
 #
 #   For help use: nvremind.rb -h
 #
+#   See <http://brettterpstra.com/projects/nvremind> for more information
+#
 # == Options
 #   -h, --help            Displays help message
 #   -H                    No, really help
