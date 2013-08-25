@@ -1,7 +1,7 @@
 nvremind
 ========
 
-A scheduled background task to scan nvALT notes for @reminder() tags and trigger notifications based on dates. It's grown to work with any folder of text or Markdown files, TaskPaper files and [Day One](http://dayoneapp.com/) entries.
+A scheduled background task to scan nvALT notes for @remind() tags and trigger notifications based on dates. It's grown to work with any folder of text or Markdown files, TaskPaper files and [Day One](http://dayoneapp.com/) entries.
 
 Yes, it's pronounced "never mind."
 
@@ -20,7 +20,7 @@ By default the script will replace found @remind tags with @reminded tags contai
 
 A document can contain multiple reminders with different dates. The script will check all of them and only modify the ones that are triggered. Future reminders in the same document will still be active after the run.
 
-Reminders on their own line with no other text will send the entire note as the reminder with the filename being the subject line. If a @reminder tag is on a line with other text, only that line will be used as the title and the content.
+Reminders on their own line with no other text will send the entire note as the reminder with the filename being the subject line. If a @remind tag is on a line with other text, only that line will be used as the title and the content.
 
 If you include a double-quoted string at the end of the remind tag value, it will override the default reminder title. `@remind(2013-05-24 "This is the override")` would create a reminder called "This is the override", ignoring any other text on the line or the name of the file. Additional text on the line or the entire note (in the case of a @remind tag on its own line) will still be included in the note, if the notification method supports that.
 
