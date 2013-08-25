@@ -42,7 +42,6 @@
 #
 # == Options
 #   -h, --help            Displays help message
-#   -H                    No, really help
 #   -v, --version         Display the version, then exit
 #   -V, --verbose         Verbose output
 #   -z, --no-replace      Don't updated @remind() tags with @reminded() after notification
@@ -157,24 +156,23 @@ class Reminder
   def parsed_options?
 
     opts = OptionParser.new
-    opts.on('-v', '--version')      { output_version ; exit 0 }
-    opts.on('-V', '--verbose')      { @options.verbose = true }
-    opts.on('-z', '--no-replace')   { @options.remove = false }
-    opts.on('-n', '--notify')       { @options.notify = true }
-    opts.on('-r', '--replace')      {  } # depricated, backward compatibility only
-    opts.on('-m', '--reminders')    { @options.reminders = true }
-    opts.on('--reminder-list LIST') { |list| @options.reminder_list = list }
-    opts.on('-e EMAIL[,EMAIL]', '--email EMAIL[,EMAIL]') { |emails|
+    opts.on('-v', '--version', 'Display version information')      { output_version ; exit 0 }
+    opts.on('-V', '--verbose', 'Verbose output')      { @options.verbose = true }
+    opts.on('-z', '--no-replace', "Don't updated @remind() tags with @reminded() after notification")   { @options.remove = false }
+    opts.on('-n', '--notify', "Use terminal-notifier to post Mountain Lion notifications")       { @options.notify = true }
+    opts.on('-r', '--replace', 'Deprecated, no effect')      {  } # depricated, backward compatibility only
+    opts.on('-m', '--reminders', "Add an item to the Reminders list in Reminders.app (due immediately)")    { @options.reminders = true }
+    opts.on('--reminder-list LIST', "List to use in Reminders.app (default 'Reminders')" ) { |list| @options.reminder_list = list }
+    opts.on('-e EMAIL[,EMAIL]', '--email EMAIL[,EMAIL]', "Send an email with note contents to the specified address") { |emails|
       @options.email = []
       emails.split(/,/).each {|email|
         @options.email.push(email.strip)
       }
     }
     opts.on('-h', '--help', 'Display this screen') {
-      output_version
-      output_usage
       puts opts
-      Process.exit
+      puts
+      output_usage
     }
     opts.parse!(@arguments) rescue return false
 
@@ -191,10 +189,14 @@ class Reminder
 
   def arguments_valid?
     @notes_dir = []
-    @arguments[0].split(",").each {|path|
-      @notes_dir.push(File.expand_path(path)) if File.exists?(File.expand_path(path))
-    }
-    true unless @notes_dir.empty?
+    unless @arguments[0].nil?
+      @arguments[0].split(",").each {|path|
+        @notes_dir.push(File.expand_path(path)) if File.exists?(File.expand_path(path))
+      }
+      true unless @notes_dir.empty?
+    else
+      false
+    end
   end
 
   def process_arguments
@@ -217,6 +219,7 @@ class Reminder
 
   def output_usage
     output_version
+    puts
     usage =<<ENDUSAGE
 nvremind.rb [options] notes_folder
 
