@@ -58,7 +58,6 @@
 #   Copyright (c) 2013 Brett Terpstra. Licensed under the MIT License:
 #   http://www.opensource.org/licenses/mit-license.php
 
-require 'rdoc/usage'
 require 'date'
 require 'cgi'
 require 'time'
@@ -66,7 +65,7 @@ require 'optparse'
 require 'ostruct'
 require 'shellwords'
 
-NVR_VERSION = '1.0.3'
+NVR_VERSION = '1.0.4'
 
 class TaskPaper
   def tp2md(input)
@@ -159,8 +158,6 @@ class Reminder
 
     opts = OptionParser.new
     opts.on('-v', '--version')      { output_version ; exit 0 }
-    opts.on('-h', '--help')         { output_help }
-    opts.on('-H')                   { output_long_help }
     opts.on('-V', '--verbose')      { @options.verbose = true }
     opts.on('-z', '--no-replace')   { @options.remove = false }
     opts.on('-n', '--notify')       { @options.notify = true }
@@ -172,6 +169,12 @@ class Reminder
       emails.split(/,/).each {|email|
         @options.email.push(email.strip)
       }
+    }
+    opts.on('-h', '--help', 'Display this screen') {
+      output_version
+      output_usage
+      puts opts
+      Process.exit
     }
     opts.parse!(@arguments) rescue return false
 
@@ -214,17 +217,15 @@ class Reminder
 
   def output_usage
     output_version
-    RDoc::usage("Usage") #exits app
-  end
+    usage =<<ENDUSAGE
+nvremind.rb [options] notes_folder
 
-  def output_help
-    output_version
-    RDoc::usage("Options")
-  end
+For help use: nvremind.rb -h
 
-  def output_long_help
-    output_version
-    RDoc::usage
+See <http://brettterpstra.com/projects/nvremind> for more information
+ENDUSAGE
+    puts usage
+    Process.exit
   end
 
   def output_version
