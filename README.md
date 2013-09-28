@@ -18,6 +18,8 @@ This script is intended to be run on a schedule. Check for reminders every 30-60
 
 By default the script will replace found @remind tags with @reminded tags containing the date the reminder was sent. Use the `-z` option to prevent any changes from being made to your file, although this can result in reminders being sent multiple times. You'd need to manually update the files after handling the reminder.
 
+The script also preserves the original modification time of the file. To instead update the modification time to the date when it was matched, use `--no-preserve-time`.
+
 A document can contain multiple reminders with different dates. The script will check all of them and only modify the ones that are triggered. Future reminders in the same document will still be active after the run.
 
 Reminders on their own line with no other text will send the entire note as the reminder with the filename being the subject line. If a @remind tag is on a line with other text, only that line will be used as the title and the content.

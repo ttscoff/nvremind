@@ -121,6 +121,7 @@ class Reminder
 
     @options = OpenStruct.new
     @options.remove = true
+    @options.preserve_time = true
     @options.verbose = false
     @options.notify = false
     @options.email = false
@@ -159,6 +160,7 @@ class Reminder
     opts.on('-v', '--version', 'Display version information')      { output_version ; exit 0 }
     opts.on('-V', '--verbose', 'Verbose output')      { @options.verbose = true }
     opts.on('-z', '--no-replace', "Don't updated @remind() tags with @reminded() after notification")   { @options.remove = false }
+    opts.on('--no-preserve-time', "Allow file modification time to change") { @options.preserve_time = false }
     opts.on('-n', '--notify', "Use terminal-notifier to post Mountain Lion notifications")       { @options.notify = true }
     opts.on('-r', '--replace', 'Deprecated, no effect')      {  } # depricated, backward compatibility only
     opts.on('-m', '--reminders', "Add an item to the Reminders list in Reminders.app (due immediately)")    { @options.reminders = true }
@@ -241,6 +243,7 @@ ENDUSAGE
       Dir.chdir(notes_dir)
 
       %x{grep -El "[^\s]remind\(.*?\)" *.{md,txt,taskpaper,ft,doentry} 2>/dev/null}.split("\n").each {|file|
+        mod_time = File.mtime(file)
         input = IO.read(file)
         lines = input.split(/\n/)
         counter = 0
@@ -311,6 +314,9 @@ ENDUSAGE
         }
         File.open(file,'w+') do |f|
           f.puts lines.join("\n")
+        end
+        if @options.preserve_time
+          %x{touch -m -d '#{mod_time.strftime('%d %b %Y %H:%M')}' "#{file}"}
         end
       }
     }
