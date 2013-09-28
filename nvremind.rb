@@ -64,7 +64,7 @@ require 'optparse'
 require 'ostruct'
 require 'shellwords'
 
-NVR_VERSION = '1.0.4'
+NVR_VERSION = '1.0.5'
 
 class TaskPaper
   def tp2md(input)
@@ -242,7 +242,7 @@ ENDUSAGE
 
       Dir.chdir(notes_dir)
 
-      %x{grep -El "[^\s]remind\(.*?\)" *.{md,txt,taskpaper,ft,doentry} 2>/dev/null}.split("\n").each {|file|
+      %x{grep -El "[^\\s]remind\\(.*?\\)" *.{md,txt,taskpaper,ft,doentry} 2>/dev/null}.split("\n").each {|file|
         mod_time = File.mtime(file)
         input = IO.read(file)
         lines = input.split(/\n/)
@@ -339,7 +339,7 @@ ENDUSAGE
         else
           set _reminders to list "#{@options.reminder_list}"
         end if
-        set d to ((current date) + 120)
+        set d to ((current date) + 300)
         make new reminder at end of _reminders with properties {name:"#{@title}", remind me date:d, body:"#{e_as(@note)}"}
       end tell
     APPLESCRIPT}
