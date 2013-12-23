@@ -162,7 +162,7 @@ class Reminder
     opts.on('-z', '--no-replace', "Don't updated @remind() tags with @reminded() after notification")   { @options.remove = false }
     opts.on('--no-preserve-time', "Allow file modification time to change") { @options.preserve_time = false }
     opts.on('-n', '--notify', "Use terminal-notifier to post Mountain Lion notifications")       { @options.notify = true }
-    opts.on('-r', '--replace', 'Deprecated, no effect')      {  } # depricated, backward compatibility only
+    opts.on('-r', '--replace', 'Deprecated, no effect')      {  } # deprecated, backward compatibility only
     opts.on('-m', '--reminders', "Add an item to the Reminders list in Reminders.app (due immediately)")    { @options.reminders = true }
     opts.on('--reminder-list LIST', "List to use in Reminders.app (default 'Reminders')" ) { |list| @options.reminder_list = list }
     opts.on('-e EMAIL[,EMAIL]', '--email EMAIL[,EMAIL]', "Send an email with note contents to the specified address") { |emails|
@@ -316,7 +316,7 @@ ENDUSAGE
           f.puts lines.join("\n")
         end
         if @options.preserve_time
-          %x{touch -m -d '#{mod_time.strftime('%d %b %Y %H:%M')}' "#{file}"}
+          %x{touch -m -t '#{mod_time.strftime('%Y%m%d%H%M')}' "#{file}"}
         end
       }
     }
