@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="nvremind : A scheduled background task to scan nvALT notes for @reminder() tags and trigger notifications based on dates." />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>nvremind</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/ttscoff/nvremind">View on GitHub</a>
+
+          <h1 id="project_title">nvremind</h1>
+          <h2 id="project_tagline">A scheduled background task to scan nvALT notes for @reminder() tags and trigger notifications based on dates.</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/ttscoff/nvremind/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/ttscoff/nvremind/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <p>Support this project by contributing to my <a href="https://www.gittip.com/ttscoff/">GitTip fund</a>.</p>
+
+<p>A scheduled background task to scan nvALT notes for <a href="https://github.com/remind" class="user-mention">@remind</a>() tags and trigger notifications based on dates. It's grown to work with any folder of text or Markdown files, TaskPaper files and <a href="http://dayoneapp.com/">Day One</a> entries.</p>
+
+<p>Yes, it's pronounced "never mind."</p>
+
+<h2>
+<a name="synopsis" class="anchor" href="#synopsis"><span class="octicon octicon-link"></span></a>Synopsis</h2>
+
+<p>This tool will search for <a href="https://github.com/remind" class="user-mention">@remind</a>() tags in the specified notes folder.</p>
+
+<p>It searches ".md", ".txt", ".ft", ".taskpaper" and Day One entry files.</p>
+
+<p>It expects an ISO 8601 format date (2013-05-01) with optional 24-hour time (2013-05-01 15:30). Put <code>@remind(2013-05-01 06:00)</code> anywhere in a note to have a reminder go off on the first run following that time.</p>
+
+<p>This script is intended to be run on a schedule. Check for reminders every 30-60 minutes using cron or launchd.</p>
+
+<p>By default the script will replace found <a href="https://github.com/remind" class="user-mention">@remind</a> tags with @reminded tags containing the date the reminder was sent. Use the <code>-z</code> option to prevent any changes from being made to your file, although this can result in reminders being sent multiple times. You'd need to manually update the files after handling the reminder.</p>
+
+<p>The script also preserves the original modification time of the file. To instead update the modification time to the date when it was matched, use <code>--no-preserve-time</code>.</p>
+
+<p>A document can contain multiple reminders with different dates. The script will check all of them and only modify the ones that are triggered. Future reminders in the same document will still be active after the run.</p>
+
+<p>Reminders on their own line with no other text will send the entire note as the reminder with the filename being the subject line. If a <a href="https://github.com/remind" class="user-mention">@remind</a> tag is on a line with other text, only that line will be used as the title and the content.</p>
+
+<p>If you include a double-quoted string at the end of the remind tag value, it will override the default reminder title. <code>@remind(2013-05-24 "This is the override")</code> would create a reminder called "This is the override", ignoring any other text on the line or the name of the file. Additional text on the line or the entire note (in the case of a <a href="https://github.com/remind" class="user-mention">@remind</a> tag on its own line) will still be included in the note, if the notification method supports that.</p>
+
+<p>Use the <code>-n</code> option to send Mountain Lion notifications instead of terminal output. Clicking a notification will open the related file in nvALT. Notifications require that the 'terminal-notifier' gem be installed (falls back to <a href="http://growl.info/downloads#generaldownloads">growlnotify</a> if it exists):</p>
+
+<pre><code>sudo gem install 'terminal-notifier'
+</code></pre>
+
+<p>Use the <code>-e ADDRESS</code> option to send an email with the title of the note as the subject and the contents of the note as the body to the specified address. Separate multiple emails with commas. The contents of the note will be rendered with MultiMarkdown, which needs to exist at <code>/usr/local/bin/multimarkdown</code>. </p>
+
+<p>If the file to be emailed has a ".taskpaper" extension, it will be converted to Markdown for formatting before processing with MultiMarkdown. [[Links]] and <a href="https://github.com/tags" class="user-mention">@tags</a> will be linked and can be clicked from Mail.app.</p>
+
+<p>The <code>-m</code> option will add a reminder to Reminders.app in Mountain Lion, due immediately, that will show up on iCloud-synced iOS devices as well. Specify a list (default "Reminders" or the first list available) using <code>--reminder-list "List name"</code>.</p>
+
+<h2>
+<a name="examples" class="anchor" href="#examples"><span class="octicon octicon-link"></span></a>Examples</h2>
+
+<pre><code>nvremind.rb ~/Dropbox/nvALT
+</code></pre>
+
+<p>Other examples:</p>
+
+<pre><code>nvremind.rb ~/Dropbox/nvALT
+nvremind.rb -n ~/Dropbox/nvALT
+nvremind.rb -e me@gmail.com ~/Dropbox/nvALT
+nvremind.rb -mn -e me@gmail.com ~/Dropbox/nvALT
+</code></pre>
+
+<p>Testing/debugging example:</p>
+
+<pre><code>nvremind.rb -Vz ~/Dropbox/nvALT
+</code></pre>
+
+<h2>
+<a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage</h2>
+
+<pre><code>nvremind.rb [options] notes_folder
+</code></pre>
+
+<p>For help use <code>nvremind.rb -h</code>. For even more help, use <code>nvremind.rb -H</code>.</p>
+
+<h2>
+<a name="options" class="anchor" href="#options"><span class="octicon octicon-link"></span></a>Options</h2>
+
+<pre><code>-h, --help            Displays help message
+-H                    No, really help
+-v, --version         Display the version, then exit
+-V, --verbose         Verbose output
+-z, --no-replace      Don't updated @remind() tags with @reminded() after notification
+-n, --notify          Use terminal-notifier to post Mountain Lion notifications
+-m, --reminders       Add an item to the Reminders list in Reminders.app (due immediately)
+--reminder-list LIST  List to use in Reminders.app (default "Reminders")
+-e EMAIL[,EMAIL], --email EMAIL[,EMAIL] Send an email with note contents to the specified address
+</code></pre>
+
+<h2>
+<a name="changelog" class="anchor" href="#changelog"><span class="octicon octicon-link"></span></a>Changelog</h2>
+
+<h3>
+<a name="10" class="anchor" href="#10"><span class="octicon octicon-link"></span></a>1.0</h3>
+
+<ul>
+<li>Works with any prefix, not just "@". To allow use in apps like Day One that have different uses for <a href="https://github.com/tags" class="user-mention">@tags</a>. Any character will work (!remind, $remind), there just has to be something immediately before "remind"</li>
+<li>Works with multiple paths, just separate with commas (no space)</li>
+<li>
+<p>Works with Day One, just pass it the path to the entries folder within your Journal</p>
+
+<ul>
+<li>
+<p>In Day One, if a reminder is on its own line and has no override title, the first 30 characters of the first line of the entry will be used as the reminder title.</p>
+
+<p>This is necessary because Day One entries don't have titles and the filenames are just UUID strings.</p>
+</li>
+</ul>
+</li>
+<li>If the tag is inside of quotes or brackets, those will be stripped from the reminder title</li>
+<li>
+<p>If you include a double-quoted string at the end of the remind tag value, it will override the default reminder title. @reminded(2013-06-06 09:52 "This is the override") would create a reminder called "This is the override", ignoring any other text on the line or the name of the file. </p>
+
+<pre><code>Additional text on the line or the entire note (in the case of a @remind tag on its own line) will still be included in the note, if the notification method supports that.
+</code></pre>
+</li>
+<li>You can specify a list for Reminders.app (default "Reminders" or the first list available) using '--reminder-list "List name"'</li>
+<li>Won't schedule the reminder if the same line contains <a href="https://github.com/done" class="user-mention">@done</a> or @canceled (also recognizes <a href="https://github.com/cancelled" class="user-mention">@cancelled</a>)</li>
+<li>Remove leading -, * or + so you can use it within Markdown lists and still get nicely-formatted reminder messages</li>
+<li>Don't include line number in file link (that just breaks it for 90% of the population)</li>
+<li>Use a remind date 1 minute in the future to allow iOS notifications when using Reminders.app</li>
+<li>Allows multiple target folders in the last argument, separated by commas (no spaces)</li>
+</ul><h3>
+<a name="022" class="anchor" href="#022"><span class="octicon octicon-link"></span></a>0.2.2</h3>
+
+<ul>
+<li>Allow title override with double quoted string at end of tag</li>
+<li>Allow specification of an alternate Reminders.app list (<code>--reminder-list LIST</code>)</li>
+<li>Remove list markers from captured line notes</li>
+<li>Remove line number from file link</li>
+</ul><h3>
+<a name="021" class="anchor" href="#021"><span class="octicon octicon-link"></span></a>0.2.1</h3>
+
+<ul>
+<li>Add FoldingText extension</li>
+<li>Handle multiple reminders per file</li>
+</ul><h3>
+<a name="020" class="anchor" href="#020"><span class="octicon octicon-link"></span></a>0.2.0</h3>
+
+<ul>
+<li>Reminders.app integration</li>
+</ul><h2>
+<a name="author" class="anchor" href="#author"><span class="octicon octicon-link"></span></a>Author</h2>
+
+<p>Brett Terpstra</p>
+
+<h2>
+<a name="copyright" class="anchor" href="#copyright"><span class="octicon octicon-link"></span></a>Copyright</h2>
+
+<p>Copyright (c) 2013 Brett Terpstra. Licensed under the MIT License:<br><a href="http://www.opensource.org/licenses/mit-license.php">http://www.opensource.org/licenses/mit-license.php</a></p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">nvremind maintained by <a href="https://github.com/ttscoff">ttscoff</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+              <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-34296025-1");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+
+  </body>
+</html>
