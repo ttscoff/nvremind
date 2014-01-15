@@ -69,6 +69,8 @@
 
 <p>The <code>-m</code> option will add a reminder to Reminders.app in Mountain Lion, due immediately, that will show up on iCloud-synced iOS devices as well. Specify a list (default "Reminders" or the first list available) using <code>--reminder-list "List name"</code>.</p>
 
+<p>The <code>-f FOLDER</code> option allows you to specify a directory where a file named with the reminder title will be saved. The note for the reminder will be the file contents. This is useful, for example, with IFTTT.com. You can save a file to a public Dropbox folder, have IFTTT notice it and take any number of actions on it.</p>
+
 <h2>
 <a name="examples" class="anchor" href="#examples"><span class="octicon octicon-link"></span></a>Examples</h2>
 
@@ -81,6 +83,7 @@
 nvremind.rb -n ~/Dropbox/nvALT
 nvremind.rb -e me@gmail.com ~/Dropbox/nvALT
 nvremind.rb -mn -e me@gmail.com ~/Dropbox/nvALT
+nvremind.rb -f ~/Dropbox/Public/ifttt ~/Dropbox/nvALT
 </code></pre>
 
 <p>Testing/debugging example:</p>
@@ -107,6 +110,7 @@ nvremind.rb -mn -e me@gmail.com ~/Dropbox/nvALT
 -n, --notify          Use terminal-notifier to post Mountain Lion notifications
 -m, --reminders       Add an item to the Reminders list in Reminders.app (due immediately)
 --reminder-list LIST  List to use in Reminders.app (default "Reminders")
+-f folder             Save a file to FOLDER named with the task title, note as contents
 -e EMAIL[,EMAIL], --email EMAIL[,EMAIL] Send an email with note contents to the specified address
 </code></pre>
 
@@ -114,6 +118,12 @@ nvremind.rb -mn -e me@gmail.com ~/Dropbox/nvALT
 <a name="changelog" class="anchor" href="#changelog"><span class="octicon octicon-link"></span></a>Changelog</h2>
 
 <h3>
+<a name="106" class="anchor" href="#106"><span class="octicon octicon-link"></span></a>1.0.6</h3>
+
+<ul>
+<li>Fixed UTF-8 and Ruby 2.0 issues</li>
+<li>Added File notification method for use with IFTTT, etc.</li>
+</ul><h3>
 <a name="10" class="anchor" href="#10"><span class="octicon octicon-link"></span></a>1.0</h3>
 
 <ul>
