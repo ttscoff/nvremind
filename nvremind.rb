@@ -24,6 +24,8 @@
 #   If the file has a ".taskpaper" extension, it will be converted to Markdown for formatting before processing with MultiMarkdown.
 #
 #   The `-m` option will add a reminder to Reminders.app in Mountain Lion, due immediately, that will show up on iCloud-synced iOS devices as well.
+#
+#   The `-f FOLDER` option allows you to specify a directory where a file named with the reminder title will be saved. The note for the reminder will be the file contents. This is useful, for example, with IFTTT.com. You can save a file to a public Dropbox folder, have IFTTT notice it and take any number of actions on it.
 # == Examples
 #
 #     nvremind.rb ~/Dropbox/nvALT
@@ -48,6 +50,7 @@
 #   -n, --notify          Use terminal-notifier to post Mountain Lion notifications
 #   -m, --reminders       Add an item to the Reminders list in Reminders.app (due immediately)
 #   --reminder-list LIST  List to use in Reminders.app (default "Reminders")
+#   -f folder             Save a file to FOLDER named with the task title, note as contents
 #   -e EMAIL[,EMAIL], --email EMAIL[,EMAIL] Send an email with note contents to the specified address
 #
 # == Author
@@ -64,7 +67,12 @@ require 'optparse'
 require 'ostruct'
 require 'shellwords'
 
-NVR_VERSION = '1.0.5'
+NVR_VERSION = '1.0.6'
+
+if RUBY_VERSION.to_f > 1.9
+  Encoding.default_external = Encoding::UTF_8
+  Encoding.default_internal = Encoding::UTF_8
+end
 
 class TaskPaper
   def tp2md(input)
@@ -125,6 +133,7 @@ class Reminder
     @options.verbose = false
     @options.notify = false
     @options.email = false
+    @options.file = false
     @options.stdout = true
     @options.reminders = false
     @options.reminder_list = "Reminders"
@@ -165,6 +174,14 @@ class Reminder
     opts.on('-r', '--replace', 'Deprecated, no effect')      {  } # deprecated, backward compatibility only
     opts.on('-m', '--reminders', "Add an item to the Reminders list in Reminders.app (due immediately)")    { @options.reminders = true }
     opts.on('--reminder-list LIST', "List to use in Reminders.app (default 'Reminders')" ) { |list| @options.reminder_list = list }
+    opts.on('-f FOLDER', '--file FOLDER', "Add a file to the specified folder")    { |folder|
+      if File.exists?(File.expand_path(folder))
+        @options.file = File.expand_path(folder)
+      else
+        puts "Invalid folder specified for -f (#{folder} does not exist)"
+        Process.exit 1
+      end
+    }
     opts.on('-e EMAIL[,EMAIL]', '--email EMAIL[,EMAIL]', "Send an email with note contents to the specified address") { |emails|
       @options.email = []
       emails.split(/,/).each {|email|
@@ -244,14 +261,18 @@ ENDUSAGE
 
       %x{grep -El "[^\\s]remind\\(.*?\\)" *.{md,txt,taskpaper,ft,doentry} 2>/dev/null}.split("\n").each {|file|
         mod_time = File.mtime(file)
-        input = IO.read(file)
+        if RUBY_VERSION.to_f > 1.9
+          input = IO.read(file).force_encoding('utf-8')
+        else
+          input = IO.read(file)
+        end
         lines = input.split(/\n/)
         counter = 0
         lines.map! {|contents|
           counter += 1
           # don't remind if the line contains @done or @canceled
           unless contents =~ /\s@(done|cancell?ed)/
-            date_match = contents.match(/([^\s"`'\(\[])remind\((.*)(\s"(.*?)")?\)/)
+            date_match = contents.match(/([^\s"`'\(\[])remind\((.*?)(\s"(.*?)")?\)/)
             unless date_match.nil?
               remind_date = Time.parse(date_match[2])
 
@@ -344,7 +365,13 @@ ENDUSAGE
       end tell
     APPLESCRIPT}
     end
-    if @options.email
+    unless @options.file == false
+      filename = File.join(@options.file, @title)
+      File.open(filename,'w+') do |f|
+        f.puts @note
+      end
+    end
+    unless @options.email == false
       subject = @title
       content = @note
       if @extension == ".taskpaper"

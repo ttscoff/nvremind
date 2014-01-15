@@ -36,6 +36,8 @@ If the file to be emailed has a ".taskpaper" extension, it will be converted to 
 
 The `-m` option will add a reminder to Reminders.app in Mountain Lion, due immediately, that will show up on iCloud-synced iOS devices as well. Specify a list (default "Reminders" or the first list available) using `--reminder-list "List name"`.
 
+The `-f FOLDER` option allows you to specify a directory where a file named with the reminder title will be saved. The note for the reminder will be the file contents. This is useful, for example, with IFTTT.com. You can save a file to a public Dropbox folder, have IFTTT notice it and take any number of actions on it.
+
 ## Examples
 
 
@@ -47,6 +49,7 @@ Other examples:
     nvremind.rb -n ~/Dropbox/nvALT
     nvremind.rb -e me@gmail.com ~/Dropbox/nvALT
     nvremind.rb -mn -e me@gmail.com ~/Dropbox/nvALT
+    nvremind.rb -f ~/Dropbox/Public/ifttt ~/Dropbox/nvALT
 
 Testing/debugging example:
 
@@ -71,9 +74,15 @@ For help use `nvremind.rb -h`. For even more help, use `nvremind.rb -H`.
     -n, --notify          Use terminal-notifier to post Mountain Lion notifications
     -m, --reminders       Add an item to the Reminders list in Reminders.app (due immediately)
     --reminder-list LIST  List to use in Reminders.app (default "Reminders")
+    -f folder             Save a file to FOLDER named with the task title, note as contents
     -e EMAIL[,EMAIL], --email EMAIL[,EMAIL] Send an email with note contents to the specified address
 
 ## Changelog
+
+### 1.0.6
+
+* Fixed UTF-8 and Ruby 2.0 issues
+* Added File notification method for use with IFTTT, etc.
 
 ### 1.0
 
