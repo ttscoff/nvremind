@@ -10,7 +10,7 @@ Yes, it's pronounced "never mind."
 
 This tool will search for @remind() tags in the specified notes folder.
 
-It searches ".md", ".txt", ".ft", ".taskpaper" and Day One entry files.
+It searches ".md", ".markdown", ".txt", ".ft", ".taskpaper" and Day One entry files.
 
 It expects an ISO 8601 format date (2013-05-01) with optional 24-hour time (2013-05-01 15:30). Put `@remind(2013-05-01 06:00)` anywhere in a note to have a reminder go off on the first run following that time.
 
