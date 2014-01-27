@@ -259,7 +259,7 @@ ENDUSAGE
 
       Dir.chdir(notes_dir)
 
-      %x{grep -El "[^\\s]remind\\(.*?\\)" *.{md,txt,taskpaper,ft,doentry} 2>/dev/null}.split("\n").each {|file|
+      %x{grep -El "[^\\s]remind\\(.*?\\)" *.{md,markdown,txt,taskpaper,ft,doentry} 2>/dev/null}.split("\n").each {|file|
         mod_time = File.mtime(file)
         if RUBY_VERSION.to_f > 1.9
           input = IO.read(file).force_encoding('utf-8')
