@@ -291,14 +291,14 @@ ENDUSAGE
                     note_title = "From Day One"
                   end
                 else
-                  note_title = File.basename(file).gsub(/\.(txt|md|taskpaper|ft|doentry)$/,'')
+                  note_title = File.basename(file).gsub(/\.(txt|md|markdown|taskpaper|ft|doentry)$/,'')
                 end
                 if stripped_line == ""
                   @title = date_match[4] || note_title
                   @extension = File.extname(file)
                   @message = "#{@title} [#{remind_date.strftime('%F')}]"
                   @note = is_day_one ? dayone_content : IO.read(file)
-                  if @extension =~ /(md|txt)$/
+                  if @extension =~ /(md|markdown|txt)$/
                      @note += "\n\n- <nvalt://find/#{CGI.escape(note_title).gsub(/\+/,"%20")}>\n"
                   end
                 else
